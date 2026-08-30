@@ -1,0 +1,42 @@
+--- a/src/mod/common/address_xlat.c	2026-01-27 03:19:49.000000000 +0000
++++ b/src/mod/common/address_xlat.c	2026-08-30 04:17:04.301393588 +0000
+@@ -45,8 +45,11 @@
+ 	}
+ 
+ 	error = eamt_xlat_6to4(instance->siit.eamt, in, out);
+-	if (!error)
+-		goto success;
++	if (!error) {
++		result.verdict = ADDRXLAT_CONTINUE;
++		result.reason = NULL;
++		return result;
++	}
+ 	if (unlikely(error != -ESRCH))
+ 		return programming_error();
+ 
+@@ -84,12 +87,6 @@
+ 	struct addrxlat_result result;
+ 	int error;
+ 
+-	if (enable_denylists && must_not_translate(&tmp, instance->ns)) {
+-		result.verdict = ADDRXLAT_ACCEPT;
+-		result.reason = "Address is subnet-scoped or belongs to a local interface.";
+-		return result;
+-	}
+-
+ 	if (enable_eam) {
+ 		error = eamt_xlat_4to6(instance->siit.eamt, &tmp, out);
+ 		if (!error)
+@@ -98,6 +95,12 @@
+ 			return programming_error();
+ 	}
+ 
++	if (enable_denylists && must_not_translate(&tmp, instance->ns)) {
++		result.verdict = ADDRXLAT_ACCEPT;
++		result.reason = "Address is subnet-scoped or belongs to a local interface.";
++		return result;
++	}
++
+ 	if (denylist4_contains(instance->siit.denylist4, &tmp)) {
+ 		result.verdict = ADDRXLAT_ACCEPT;
+ 		result.reason = "Address lacks EAMT entry and is denylist4ed.";
