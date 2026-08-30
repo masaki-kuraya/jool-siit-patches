@@ -1,0 +1,31 @@
+--- a/src/mod/common/Kbuild	2024-08-24 04:24:19.000000000 +0000
++++ b/src/mod/common/Kbuild	2026-08-30 01:37:15.058571922 +0000
+@@ -1,5 +1,5 @@
+ #CC=cgcc    # More healthy warnings.
+-ccflags-y := -I$(src)/../..
++ccflags-y := -I$(src)/../.. $(if $(CONFIG_NETFILTER_XTABLES),-DNETFILTER_XTABLES)
+ 
+ obj-m += jool_common.o
+ 
+--- a/src/mod/siit/Makefile	2024-08-24 04:24:19.000000000 +0000
++++ b/src/mod/siit/Makefile	2026-08-30 01:42:49.219463332 +0000
+@@ -3,7 +3,7 @@
+ KBUILD_EXTRA_SYMBOLS = $(src)/../common/Module.symvers
+ 
+ #CC=cgcc    # More healthy warnings.
+-ccflags-y := -I$(src)/../..
++ccflags-y := -I$(src)/../.. $(if $(CONFIG_NETFILTER_XTABLES),-DNETFILTER_XTABLES)
+ 
+ obj-m += jool_siit.o
+ 
+--- a/src/mod/nat64/Makefile	2024-08-24 04:24:19.000000000 +0000
++++ b/src/mod/nat64/Makefile	2026-08-30 01:42:49.219463332 +0000
+@@ -3,7 +3,7 @@
+ KBUILD_EXTRA_SYMBOLS = $(src)/../common/Module.symvers
+ 
+ #CC=cgcc    # More healthy warnings.
+-ccflags-y := -I$(src)/../..
++ccflags-y := -I$(src)/../.. $(if $(CONFIG_NETFILTER_XTABLES),-DNETFILTER_XTABLES)
+ 
+ obj-m += jool.o
+ 

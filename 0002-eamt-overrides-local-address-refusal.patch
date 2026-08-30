@@ -1,0 +1,51 @@
+--- a/src/mod/common/address_xlat.c	2024-08-24 04:24:19.000000000 +0000
++++ b/src/mod/common/address_xlat.c	2026-08-30 02:28:13.578922622 +0000
+@@ -45,8 +45,16 @@
+ 	}
+ 
+ 	error = eamt_xlat_6to4(instance->siit.eamt, in, out);
+-	if (!error)
+-		goto success;
++	if (!error) {
++		/* local patch (external-access v3 Phase C, 2026-08-30):
++		 * an explicit EAMT hit overrides the implicit local-interface
++		 * refusal at the success: label, so the relay may translate to
++		 * an address it also owns (.241, which iptables only feeds to
++		 * Jool for dport 443). */
++		result.verdict = ADDRXLAT_CONTINUE;
++		result.reason = NULL;
++		return result;
++	}
+ 	if (unlikely(error != -ESRCH))
+ 		return programming_error();
+ 
+@@ -84,12 +92,10 @@
+ 	struct addrxlat_result result;
+ 	int error;
+ 
+-	if (enable_denylists && must_not_translate(&tmp, instance->ns)) {
+-		result.verdict = ADDRXLAT_ACCEPT;
+-		result.reason = "Address is subnet-scoped or belongs to a local interface.";
+-		return result;
+-	}
+-
++	/* local patch (external-access v3 Phase C, 2026-08-30):
++	 * consult EAMT before the implicit local-address refusal, so an
++	 * explicit EAMT entry can translate an address the node also owns.
++	 */
+ 	if (enable_eam) {
+ 		error = eamt_xlat_4to6(instance->siit.eamt, &tmp, out);
+ 		if (!error)
+@@ -98,6 +104,12 @@
+ 			return programming_error();
+ 	}
+ 
++	if (enable_denylists && must_not_translate(&tmp, instance->ns)) {
++		result.verdict = ADDRXLAT_ACCEPT;
++		result.reason = "Address is subnet-scoped or belongs to a local interface.";
++		return result;
++	}
++
+ 	if (denylist4_contains(instance->siit.denylist4, &tmp)) {
+ 		result.verdict = ADDRXLAT_ACCEPT;
+ 		result.reason = "Address lacks EAMT entry and is denylist4ed.";
